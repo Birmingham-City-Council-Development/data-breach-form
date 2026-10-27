@@ -1,0 +1,46 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "data-breach-form-client-side-solution",
+    "id": "0e1e5683-6be0-4887-86e7-1f06791c8493",
+    "version": "1.1.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "Birmingham City Council",
+      "websiteUrl": "https://www.birmingham.gov.uk",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.20.0"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "Report and review data protection breaches in SharePoint."
+      },
+      "longDescription": {
+        "default": "A GOV.UK-styled form for staff to report data protection breaches, with a report viewer for the data breach team to review cases, request more information, record panel recommendations and close cases. Reports are stored in a SharePoint list with item-level permissions; email notifications and permission-restricted writes go through Azure API Management and Logic Apps."
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "webApiPermissionRequests": [
+      {
+        "resource": "Microsoft Graph",
+        "scope": "Mail.Send"
+      }
+    ],
+    "features": [
+      {
+        "title": "Data Breach Form Feature",
+        "description": "Activates the Data Breach Form and Data Breach Report Viewer web parts.",
+        "id": "1ee85c7f-ef28-48b0-9334-d914c177d618",
+        "version": "1.1.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/data-breach-form.sppkg"
+  }
+}

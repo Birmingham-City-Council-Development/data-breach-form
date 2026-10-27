@@ -1,0 +1,13 @@
+.dataBreachForm {
+  // Not GDS Transport — that font is licensed for GOV.UK services only.
+  font-family: arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.25;
+  color: #0b0c0c;
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "a3f2e1d4-9c7b-4e5f-8a2d-1b6c3e0f7d9a",
+  "alias": "ReportViewerWebPart",
+  "componentType": "WebPart",
+  "version": "*",
+  "manifestVersion": 2,
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "SharePointFullPage"],
+  "supportsThemeVariants": true,
+  "preconfiguredEntries": [{
+    "groupId": "5c03119e-3074-46fd-976b-c60198311f70",
+    "group": { "default": "Advanced" },
+    "title": { "default": "Data Breach Report Viewer" },
+    "description": { "default": "View and edit data breach reports from the Data Breaches list." },
+    "officeFabricIconFontName": "DocumentSearch",
+    "properties": {}
+  }]
+}
