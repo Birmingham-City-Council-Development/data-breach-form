@@ -579,8 +579,14 @@ export async function appendCommLogEntry(id: number, entry: ICommLogEntry, extra
 // item level). Instead this calls an elevated APIM-fronted Logic App that
 // re-verifies the caller is actually the Author or person responsible for
 // this specific item (fetched fresh server-side, not trusted from the
-// request) before appending on their behalf — see logicapp-append-comm-log
-// in the scratchpad for the flow definition.
+// request) before appending on their behalf — see
+// logic-apps/Data_Breach_Append_Comm_Log for the workflow definition.
+//
+// The workflow only confirms the save; it deliberately doesn't return the
+// log, so the endpoint can't be used to read another report's
+// correspondence. The updated log is read back here under the caller's own
+// SharePoint permissions instead — anyone allowed to append can already read
+// the item.
 export async function appendCommLogEntryElevated(
   apiUrl: string,
   apiKey: string,
@@ -596,7 +602,17 @@ export async function appendCommLogEntryElevated(
   if (!res.ok) {
     throw new Error(`Failed to save communication log entry (${res.status}).`);
   }
-  return res.json() as Promise<ICommLogEntry[]>;
+  // Earlier versions of the workflow returned the full log. Use it if it's
+  // there, so this works whichever version is deployed.
+  const body: unknown = await res.json().catch(function() { return undefined; });
+  if (Array.isArray(body)) return body as ICommLogEntry[];
+  return readCommLog(itemId);
+}
+
+// Reads a report's communication log under the current user's own permissions.
+async function readCommLog(itemId: number): Promise<ICommLogEntry[]> {
+  const item = await _sp.web.lists.getByTitle(SP_LIST_NAME).items.getById(itemId).select('CommunicationLog')();
+  return parseCommLog(item.CommunicationLog as string);
 }
 
 // Named after the Panel recommendations section, but also covers Status —
