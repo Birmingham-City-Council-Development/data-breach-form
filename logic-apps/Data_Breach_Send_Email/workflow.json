@@ -1,0 +1,93 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "contentVersion": "1.0.0.0",
+        "actions": {
+            "Send_an_email_(V2)": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "office365"
+                        }
+                    },
+                    "method": "post",
+                    "body": {
+                        "To": "@triggerBody()?['to']",
+                        "Subject": "@triggerBody()?['subject']",
+                        "Body": "@{triggerBody()?['body']}",
+                        "From": "REPLACE_WITH_FROM_MAILBOX",
+                        "Attachments": "@if(empty(triggerBody()?['attachmentContentBytes']), json('[]'), createArray(addProperty(addProperty(addProperty(json('{}'), 'Name', triggerBody()?['attachmentFilename']), 'ContentBytes', triggerBody()?['attachmentContentBytes']), 'ContentType', triggerBody()?['attachmentContentType'])))",
+                        "Importance": "High"
+                    },
+                    "path": "/v2/Mail",
+                    "retryPolicy": {
+                        "type": "fixed",
+                        "count": 5,
+                        "interval": "PT1M"
+                    }
+                },
+                "runAfter": {}
+            },
+            "Response": {
+                "type": "Response",
+                "kind": "Http",
+                "inputs": {
+                    "statusCode": 200
+                },
+                "runAfter": {
+                    "Send_an_email_(V2)": [
+                        "SUCCEEDED"
+                    ]
+                }
+            },
+            "Response_1": {
+                "type": "Response",
+                "kind": "Http",
+                "inputs": {
+                    "statusCode": 500
+                },
+                "runAfter": {
+                    "Send_an_email_(V2)": [
+                        "FAILED",
+                        "TIMEDOUT"
+                    ]
+                }
+            }
+        },
+        "outputs": {},
+        "triggers": {
+            "When_an_HTTP_request_is_received": {
+                "type": "Request",
+                "kind": "Http",
+                "inputs": {
+                    "method": "POST",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "to": {
+                                "type": "string"
+                            },
+                            "subject": {
+                                "type": "string"
+                            },
+                            "body": {
+                                "type": "string"
+                            },
+                            "attachmentFilename": {
+                                "type": "string"
+                            },
+                            "attachmentContentType": {
+                                "type": "string"
+                            },
+                            "attachmentContentBytes": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "kind": "stateful"
+}

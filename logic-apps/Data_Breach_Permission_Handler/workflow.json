@@ -1,0 +1,569 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "contentVersion": "1.0.0.0",
+        "actions": {
+            "BreakRoleInheritance": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "sharepointonline"
+                        }
+                    },
+                    "method": "post",
+                    "body": {
+                        "method": "POST",
+                        "uri": "_api/web/lists/getbytitle('Data%20Breaches')/items(@{triggerBody()?['ID']})/breakroleinheritance(copyroleassignments=false,clearsubscopes=true)",
+                        "headers": {
+                            "Accept": "application/json;odata=nometadata"
+                        }
+                    },
+                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                },
+                "runAfter": {}
+            },
+            "GetReadRoleDefId": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "sharepointonline"
+                        }
+                    },
+                    "method": "post",
+                    "body": {
+                        "method": "GET",
+                        "uri": "_api/web/roledefinitions/getbyname('Read')",
+                        "headers": {
+                            "Accept": "application/json;odata=nometadata"
+                        }
+                    },
+                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                },
+                "runAfter": {
+                    "BreakRoleInheritance": [
+                        "Succeeded",
+                        "Failed",
+                        "Skipped",
+                        "TimedOut"
+                    ]
+                }
+            },
+            "GetAdminGroupId": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "sharepointonline"
+                        }
+                    },
+                    "method": "post",
+                    "body": {
+                        "method": "GET",
+                        "uri": "_api/web/sitegroups/getbyname('Data%20Breach%20Owners')",
+                        "headers": {
+                            "Accept": "application/json;odata=nometadata"
+                        }
+                    },
+                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                },
+                "runAfter": {
+                    "BreakRoleInheritance": [
+                        "Succeeded",
+                        "Failed",
+                        "Skipped",
+                        "TimedOut"
+                    ]
+                }
+            },
+            "GetReviewerGroupId": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "sharepointonline"
+                        }
+                    },
+                    "method": "post",
+                    "body": {
+                        "method": "GET",
+                        "uri": "_api/web/sitegroups/getbyname('Data%20Breach%20Reviewers')",
+                        "headers": {
+                            "Accept": "application/json;odata=nometadata"
+                        }
+                    },
+                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                },
+                "runAfter": {
+                    "BreakRoleInheritance": [
+                        "Succeeded",
+                        "Failed",
+                        "Skipped",
+                        "TimedOut"
+                    ]
+                }
+            },
+            "GetAdminRoleDefId": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "sharepointonline"
+                        }
+                    },
+                    "method": "post",
+                    "body": {
+                        "method": "GET",
+                        "uri": "_api/web/roledefinitions/getbyname('Contribute')",
+                        "headers": {
+                            "Accept": "application/json;odata=nometadata"
+                        }
+                    },
+                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                },
+                "runAfter": {
+                    "BreakRoleInheritance": [
+                        "Succeeded",
+                        "Failed",
+                        "Skipped",
+                        "TimedOut"
+                    ]
+                }
+            },
+            "EnsureUserSubmitter": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "sharepointonline"
+                        }
+                    },
+                    "method": "post",
+                    "body": {
+                        "method": "POST",
+                        "uri": "_api/web/ensureuser",
+                        "headers": {
+                            "Accept": "application/json;odata=nometadata",
+                            "Content-Type": "application/json;odata=verbose"
+                        },
+                        "body": "   { \"logonName\": \"@{triggerBody()?['Email_x0020_of_x0020_the_x0020_r']}\" }"
+                    },
+                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                },
+                "runAfter": {
+                    "BreakRoleInheritance": [
+                        "Succeeded",
+                        "Failed",
+                        "Skipped",
+                        "TimedOut"
+                    ]
+                }
+            },
+            "EnsureUserOfficer": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "sharepointonline"
+                        }
+                    },
+                    "method": "post",
+                    "body": {
+                        "method": "POST",
+                        "uri": "_api/web/ensureuser",
+                        "headers": {
+                            "Accept": "application/json;odata=nometadata",
+                            "Content-Type": "application/json;odata=verbose"
+                        },
+                        "body": "{ \"logonName\": \"@{triggerBody()?['Email_x0020_of_x0020_the_x0020_r']}\" }"
+                    },
+                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                },
+                "runAfter": {
+                    "EnsureUserSubmitter": [
+                        "Succeeded",
+                        "Failed",
+                        "Skipped",
+                        "TimedOut"
+                    ]
+                }
+            },
+            "EnsureUserResponsible": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "sharepointonline"
+                        }
+                    },
+                    "method": "post",
+                    "body": {
+                        "method": "POST",
+                        "uri": "_api/web/ensureuser",
+                        "headers": {
+                            "Accept": "application/json;odata=nometadata",
+                            "Content-Type": "application/json;odata=verbose"
+                        },
+                        "body": "{ \"logonName\": \"@{triggerBody()?['Email_x0020_address_x0020_of_x00']}\" }"
+                    },
+                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                },
+                "runAfter": {
+                    "EnsureUserOfficer": [
+                        "Succeeded",
+                        "Failed",
+                        "Skipped",
+                        "TimedOut"
+                    ]
+                }
+            },
+            "EnsureUserLineManager": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "sharepointonline"
+                        }
+                    },
+                    "method": "post",
+                    "body": {
+                        "method": "POST",
+                        "uri": "_api/web/ensureuser",
+                        "headers": {
+                            "Accept": "application/json;odata=nometadata",
+                            "Content-Type": "application/json;odata=verbose"
+                        },
+                        "body": "{ \"logonName\": \"@{triggerBody()?['Email_x0020_address_x0020_of_x000']}\" }"
+                    },
+                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                },
+                "runAfter": {
+                    "EnsureUserResponsible": [
+                        "Succeeded",
+                        "Failed",
+                        "Skipped",
+                        "TimedOut"
+                    ]
+                }
+            },
+            "GrantAdminGroup": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "sharepointonline"
+                        }
+                    },
+                    "method": "post",
+                    "body": {
+                        "method": "POST",
+                        "uri": "_api/web/lists/getbytitle('Data%20Breaches')/items(@{triggerBody()?['ID']})/roleassignments/addroleassignment(principalid=@{body('GetAdminGroupId')?['Id']},roledefid=@{body('GetAdminRoleDefId')?['Id']})",
+                        "headers": {
+                            "Accept": "application/json;odata=nometadata"
+                        }
+                    },
+                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                },
+                "runAfter": {
+                    "EnsureUserLineManager": [
+                        "Succeeded",
+                        "Failed",
+                        "Skipped",
+                        "TimedOut"
+                    ],
+                    "GetReadRoleDefId": [
+                        "Succeeded",
+                        "Failed",
+                        "Skipped",
+                        "TimedOut"
+                    ],
+                    "GetAdminGroupId": [
+                        "Succeeded",
+                        "Failed",
+                        "Skipped",
+                        "TimedOut"
+                    ],
+                    "GetAdminRoleDefId": [
+                        "Succeeded",
+                        "Failed",
+                        "Skipped",
+                        "TimedOut"
+                    ],
+                    "GetReviewerGroupId": [
+                        "Succeeded",
+                        "Failed",
+                        "Skipped",
+                        "TimedOut"
+                    ]
+                }
+            },
+            "GrantReviewerGroup": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "sharepointonline"
+                        }
+                    },
+                    "method": "post",
+                    "body": {
+                        "method": "POST",
+                        "uri": "_api/web/lists/getbytitle('Data%20Breaches')/items(@{triggerBody()?['ID']})/roleassignments/addroleassignment(principalid=@{body('GetReviewerGroupId')?['Id']},roledefid=@{body('GetReadRoleDefId')?['Id']})",
+                        "headers": {
+                            "Accept": "application/json;odata=nometadata"
+                        }
+                    },
+                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                },
+                "runAfter": {
+                    "GrantAdminGroup": [
+                        "Succeeded",
+                        "Failed",
+                        "Skipped",
+                        "TimedOut"
+                    ]
+                }
+            },
+            "CheckIfClosed": {
+                "type": "If",
+                "expression": "@equals(triggerOutputs()?['body/Status']?['Value'], 'Closed')",
+                "actions": {
+                    "RemoveSubmitter": {
+                        "type": "ApiConnection",
+                        "inputs": {
+                            "host": {
+                                "connection": {
+                                    "referenceName": "sharepointonline"
+                                }
+                            },
+                            "method": "post",
+                            "body": {
+                                "method": "POST",
+                                "uri": "_api/web/lists/getbytitle('Data%20Breaches')/items(@{triggerBody()?['ID']})/roleassignments/removeroleassignment(principalid=@{body('EnsureUserSubmitter')?['Id']},roledefid=@{body('GetReadRoleDefId')?['Id']})",
+                                "headers": {
+                                    "Accept": "application/json;odata=nometadata"
+                                }
+                            },
+                            "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                        }
+                    },
+                    "RemoveOfficer": {
+                        "type": "ApiConnection",
+                        "inputs": {
+                            "host": {
+                                "connection": {
+                                    "referenceName": "sharepointonline"
+                                }
+                            },
+                            "method": "post",
+                            "body": {
+                                "method": "POST",
+                                "uri": "_api/web/lists/getbytitle('Data%20Breaches')/items(@{triggerBody()?['ID']})/roleassignments/removeroleassignment(principalid=@{body('EnsureUserOfficer')?['Id']},roledefid=@{body('GetReadRoleDefId')?['Id']})",
+                                "headers": {
+                                    "Accept": "application/json;odata=nometadata"
+                                }
+                            },
+                            "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                        },
+                        "runAfter": {
+                            "RemoveSubmitter": [
+                                "Succeeded",
+                                "Failed",
+                                "Skipped",
+                                "TimedOut"
+                            ]
+                        }
+                    },
+                    "RemoveResponsible": {
+                        "type": "ApiConnection",
+                        "inputs": {
+                            "host": {
+                                "connection": {
+                                    "referenceName": "sharepointonline"
+                                }
+                            },
+                            "method": "post",
+                            "body": {
+                                "method": "POST",
+                                "uri": "_api/web/lists/getbytitle('Data%20Breaches')/items(@{triggerBody()?['ID']})/roleassignments/removeroleassignment(principalid=@{body('EnsureUserResponsible')?['Id']},roledefid=@{body('GetReadRoleDefId')?['Id']})",
+                                "headers": {
+                                    "Accept": "application/json;odata=nometadata"
+                                }
+                            },
+                            "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                        },
+                        "runAfter": {
+                            "RemoveOfficer": [
+                                "Succeeded",
+                                "Failed",
+                                "Skipped",
+                                "TimedOut"
+                            ]
+                        }
+                    },
+                    "RemoveLineManager": {
+                        "type": "ApiConnection",
+                        "inputs": {
+                            "host": {
+                                "connection": {
+                                    "referenceName": "sharepointonline"
+                                }
+                            },
+                            "method": "post",
+                            "body": {
+                                "method": "POST",
+                                "uri": "_api/web/lists/getbytitle('Data%20Breaches')/items(@{triggerBody()?['ID']})/roleassignments/removeroleassignment(principalid=@{body('EnsureUserLineManager')?['Id']},roledefid=@{body('GetReadRoleDefId')?['Id']})",
+                                "headers": {
+                                    "Accept": "application/json;odata=nometadata"
+                                }
+                            },
+                            "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                        },
+                        "runAfter": {
+                            "RemoveResponsible": [
+                                "Succeeded",
+                                "Failed",
+                                "Skipped",
+                                "TimedOut"
+                            ]
+                        }
+                    }
+                },
+                "else": {
+                    "actions": {
+                        "GrantSubmitter": {
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "referenceName": "sharepointonline"
+                                    }
+                                },
+                                "method": "post",
+                                "body": {
+                                    "method": "POST",
+                                    "uri": "_api/web/lists/getbytitle('Data%20Breaches')/items(@{triggerBody()?['ID']})/roleassignments/addroleassignment(principalid=@{body('EnsureUserSubmitter')?['Id']},roledefid=@{body('GetReadRoleDefId')?['Id']})",
+                                    "headers": {
+                                        "Accept": "application/json;odata=nometadata"
+                                    }
+                                },
+                                "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                            }
+                        },
+                        "GrantOfficer": {
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "referenceName": "sharepointonline"
+                                    }
+                                },
+                                "method": "post",
+                                "body": {
+                                    "method": "POST",
+                                    "uri": "_api/web/lists/getbytitle('Data%20Breaches')/items(@{triggerBody()?['ID']})/roleassignments/addroleassignment(principalid=@{body('EnsureUserOfficer')?['Id']},roledefid=@{body('GetReadRoleDefId')?['Id']})",
+                                    "headers": {
+                                        "Accept": "application/json;odata=nometadata"
+                                    }
+                                },
+                                "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                            },
+                            "runAfter": {
+                                "GrantSubmitter": [
+                                    "Succeeded",
+                                    "Failed",
+                                    "Skipped",
+                                    "TimedOut"
+                                ]
+                            }
+                        },
+                        "GrantResponsible": {
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "referenceName": "sharepointonline"
+                                    }
+                                },
+                                "method": "post",
+                                "body": {
+                                    "method": "POST",
+                                    "uri": "_api/web/lists/getbytitle('Data%20Breaches')/items(@{triggerBody()?['ID']})/roleassignments/addroleassignment(principalid=@{body('EnsureUserResponsible')?['Id']},roledefid=@{body('GetReadRoleDefId')?['Id']})",
+                                    "headers": {
+                                        "Accept": "application/json;odata=nometadata"
+                                    }
+                                },
+                                "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                            },
+                            "runAfter": {
+                                "GrantOfficer": [
+                                    "Succeeded",
+                                    "Failed",
+                                    "Skipped",
+                                    "TimedOut"
+                                ]
+                            }
+                        },
+                        "GrantLineManager": {
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "referenceName": "sharepointonline"
+                                    }
+                                },
+                                "method": "post",
+                                "body": {
+                                    "method": "POST",
+                                    "uri": "_api/web/lists/getbytitle('Data%20Breaches')/items(@{triggerBody()?['ID']})/roleassignments/addroleassignment(principalid=@{body('EnsureUserLineManager')?['Id']},roledefid=@{body('GetReadRoleDefId')?['Id']})",
+                                    "headers": {
+                                        "Accept": "application/json;odata=nometadata"
+                                    }
+                                },
+                                "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                            },
+                            "runAfter": {
+                                "GrantResponsible": [
+                                    "Succeeded",
+                                    "Failed",
+                                    "Skipped",
+                                    "TimedOut"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "runAfter": {
+                    "GrantReviewerGroup": [
+                        "Succeeded",
+                        "Failed",
+                        "Skipped",
+                        "TimedOut"
+                    ]
+                }
+            }
+        },
+        "outputs": {},
+        "triggers": {
+            "When_an_item_is_created_or_modified": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "sharepointonline"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/tables/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_LIST_ID'))}/onupdateditems"
+                },
+                "recurrence": {
+                    "interval": 1,
+                    "frequency": "Minute"
+                },
+                "splitOn": "@triggerBody()?['value']"
+            }
+        }
+    },
+    "kind": "stateful"
+}

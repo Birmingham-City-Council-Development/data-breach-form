@@ -1,0 +1,145 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "contentVersion": "1.0.0.0",
+        "triggers": {
+            "When_a_HTTP_request_is_received": {
+                "type": "Request",
+                "kind": "Http",
+                "inputs": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "itemId": {
+                                "type": "integer"
+                            },
+                            "callerEmail": {
+                                "type": "string"
+                            },
+                            "filename": {
+                                "type": "string"
+                            },
+                            "contentType": {
+                                "type": "string"
+                            },
+                            "contentBytes": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "itemId",
+                            "callerEmail",
+                            "filename",
+                            "contentBytes"
+                        ]
+                    }
+                }
+            }
+        },
+        "actions": {
+            "GetItem": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "sharepointonline"
+                        }
+                    },
+                    "method": "post",
+                    "body": {
+                        "method": "GET",
+                        "uri": "_api/web/lists/getbytitle('Data%20Breaches')/items(@{triggerBody()?['itemId']})?$select=Id,Author/Title,Author/EMail&$expand=Author",
+                        "headers": {
+                            "Accept": "application/json;odata=nometadata"
+                        }
+                    },
+                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                },
+                "runAfter": {}
+            },
+            "Condition_-_caller_is_the_reports_author": {
+                "type": "If",
+                "expression": {
+                    "and": [
+                        {
+                            "equals": [
+                                "@toLower(trim(coalesce(body('GetItem')?['Author']?['EMail'], '')))",
+                                "@toLower(trim(coalesce(triggerBody()?['callerEmail'], 'no-caller-email')))"
+                            ]
+                        }
+                    ]
+                },
+                "actions": {
+                    "Add_attachment": {
+                        "type": "ApiConnection",
+                        "inputs": {
+                            "host": {
+                                "connection": {
+                                    "referenceName": "sharepointonline"
+                                }
+                            },
+                            "method": "post",
+                            "body": "@base64ToBinary(triggerBody()?['contentBytes'])",
+                            "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/tables/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_LIST_ID'))}/items/@{encodeURIComponent(encodeURIComponent(triggerBody()?['itemId']))}/attachments",
+                            "queries": {
+                                "displayName": "@triggerBody()?['filename']"
+                            }
+                        }
+                    },
+                    "Response_-_success": {
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                            "statusCode": 200,
+                            "body": {
+                                "success": true
+                            }
+                        },
+                        "runAfter": {
+                            "Add_attachment": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Response_-_attach_failed": {
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                            "statusCode": 500,
+                            "body": {
+                                "error": "Failed to add attachment."
+                            }
+                        },
+                        "runAfter": {
+                            "Add_attachment": [
+                                "Failed",
+                                "TimedOut"
+                            ]
+                        }
+                    }
+                },
+                "else": {
+                    "actions": {
+                        "Response_-_forbidden": {
+                            "type": "Response",
+                            "kind": "Http",
+                            "inputs": {
+                                "statusCode": 403,
+                                "body": {
+                                    "error": "Caller is not this report's Author."
+                                }
+                            }
+                        }
+                    }
+                },
+                "runAfter": {
+                    "GetItem": [
+                        "Succeeded"
+                    ]
+                }
+            }
+        },
+        "outputs": {}
+    },
+    "kind": "stateful"
+}

@@ -130,7 +130,7 @@ Four Logic App workflows, all hosted in one Logic App Standard resource, fronted
 - **`update-panel-recommendations`** — updates the Panel recommendations fields and Status; callable by any Reviewer or Owner
 - **`upload-attachment`** — attaches a file to a report on behalf of its submitter, who holds Add Items but not Edit on the list
 
-Each operation's APIM URL and key are entered in the web part's property pane. The Logic App workflows themselves are not included in this repository; each one checks the caller's identity or SharePoint group membership before writing with its own elevated SharePoint connection.
+Each operation's APIM URL and key are entered in the web part's property pane. The workflows are in [`logic-apps/`](logic-apps/README.md), with setup instructions. Each one checks the caller's identity or SharePoint group membership before writing with its own elevated SharePoint connection.
 
 ## Security model
 

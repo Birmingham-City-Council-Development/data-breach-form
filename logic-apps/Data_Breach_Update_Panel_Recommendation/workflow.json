@@ -1,0 +1,344 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "contentVersion": "1.0.0.0",
+        "triggers": {
+            "When_a_HTTP_request_is_received": {
+                "type": "Request",
+                "kind": "Http",
+                "inputs": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "itemId": {
+                                "type": "integer"
+                            },
+                            "callerEmail": {
+                                "type": "string"
+                            },
+                            "fields": {
+                                "type": "object",
+                                "properties": {
+                                    "Reported_x0020_to_x0020_ICO": {
+                                        "type": "string"
+                                    },
+                                    "Staff_x0020_e_x002d_Learning_x00": {
+                                        "type": "string"
+                                    },
+                                    "Review_x0020_of_x0020_Procedures": {
+                                        "type": "string"
+                                    },
+                                    "Reason_x0020_for_x0020_Decision": {
+                                        "type": "string"
+                                    },
+                                    "Status": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        },
+                        "required": [
+                            "itemId",
+                            "callerEmail",
+                            "fields"
+                        ]
+                    }
+                }
+            }
+        },
+        "actions": {
+            "GetReviewerGroupMembers": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "sharepointonline"
+                        }
+                    },
+                    "method": "post",
+                    "body": {
+                        "method": "GET",
+                        "uri": "_api/web/sitegroups/getbyname('Data%20Breach%20Reviewers')/users?$select=Email",
+                        "headers": {
+                            "Accept": "application/json;odata=nometadata"
+                        }
+                    },
+                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                },
+                "runAfter": {}
+            },
+            "GetAdminGroupMembers": {
+                "type": "ApiConnection",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "sharepointonline"
+                        }
+                    },
+                    "method": "post",
+                    "body": {
+                        "method": "GET",
+                        "uri": "_api/web/sitegroups/getbyname('Data%20Breach%20Owners')/users?$select=Email",
+                        "headers": {
+                            "Accept": "application/json;odata=nometadata"
+                        }
+                    },
+                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                },
+                "runAfter": {}
+            },
+            "FilterReviewerMatch": {
+                "type": "Query",
+                "inputs": {
+                    "from": "@body('GetReviewerGroupMembers')?['value']",
+                    "where": "@equals(toLower(item()?['Email']), toLower(triggerBody()?['callerEmail']))"
+                },
+                "runAfter": {
+                    "GetReviewerGroupMembers": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "FilterAdminMatch": {
+                "type": "Query",
+                "inputs": {
+                    "from": "@body('GetAdminGroupMembers')?['value']",
+                    "where": "@equals(toLower(item()?['Email']), toLower(triggerBody()?['callerEmail']))"
+                },
+                "runAfter": {
+                    "GetAdminGroupMembers": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "InitializeVariables": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "Attempt",
+                            "type": "integer",
+                            "value": 0
+                        },
+                        {
+                            "name": "Done",
+                            "type": "boolean",
+                            "value": false
+                        }
+                    ]
+                },
+                "runAfter": {}
+            },
+            "Condition_Caller_Is_Reviewer_Or_Admin": {
+                "type": "If",
+                "expression": {
+                    "or": [
+                        {
+                            "greater": [
+                                "@length(body('FilterReviewerMatch'))",
+                                0
+                            ]
+                        },
+                        {
+                            "greater": [
+                                "@length(body('FilterAdminMatch'))",
+                                0
+                            ]
+                        }
+                    ]
+                },
+                "actions": {
+                    "Do_Until_Saved": {
+                        "type": "Until",
+                        "expression": "@or(equals(variables('Done'), true), greaterOrEquals(variables('Attempt'), 3))",
+                        "limit": {
+                            "count": 3,
+                            "timeout": "PT1M"
+                        },
+                        "actions": {
+                            "IncrementAttempt": {
+                                "type": "IncrementVariable",
+                                "inputs": {
+                                    "name": "Attempt",
+                                    "value": 1
+                                }
+                            },
+                            "GetItem": {
+                                "type": "ApiConnection",
+                                "inputs": {
+                                    "host": {
+                                        "connection": {
+                                            "referenceName": "sharepointonline"
+                                        }
+                                    },
+                                    "method": "post",
+                                    "body": {
+                                        "method": "GET",
+                                        "uri": "_api/web/lists/getbytitle('Data%20Breaches')/items(@{triggerBody()?['itemId']})?$select=Id",
+                                        "headers": {
+                                            "Accept": "application/json;odata=nometadata"
+                                        }
+                                    },
+                                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                                },
+                                "runAfter": {
+                                    "IncrementAttempt": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "UpdateItem": {
+                                "type": "ApiConnection",
+                                "inputs": {
+                                    "host": {
+                                        "connection": {
+                                            "referenceName": "sharepointonline"
+                                        }
+                                    },
+                                    "method": "post",
+                                    "body": {
+                                        "method": "POST",
+                                        "uri": "_api/web/lists/getbytitle('Data%20Breaches')/items(@{triggerBody()?['itemId']})",
+                                        "headers": {
+                                            "Accept": "application/json;odata=nometadata",
+                                            "Content-Type": "application/json;odata=verbose",
+                                            "X-HTTP-Method": "MERGE",
+                                            "IF-MATCH": "@{outputs('GetItem')?['headers']?['ETag']}"
+                                        },
+                                        "body": "@{string(addProperty(triggerBody()?['fields'], '__metadata', json('{\"type\":\"SP.Data.Data_x0020_BreachesListItem\"}')))}"
+                                    },
+                                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('REPLACE_WITH_SHAREPOINT_SITE_URL'))}/httprequest"
+                                },
+                                "runAfter": {
+                                    "GetItem": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "Condition_Update_Succeeded": {
+                                "type": "If",
+                                "expression": {
+                                    "or": [
+                                        {
+                                            "equals": [
+                                                "@outputs('UpdateItem')?['statusCode']",
+                                                200
+                                            ]
+                                        },
+                                        {
+                                            "equals": [
+                                                "@outputs('UpdateItem')?['statusCode']",
+                                                201
+                                            ]
+                                        },
+                                        {
+                                            "equals": [
+                                                "@outputs('UpdateItem')?['statusCode']",
+                                                204
+                                            ]
+                                        }
+                                    ]
+                                },
+                                "actions": {
+                                    "SetDoneTrue": {
+                                        "type": "SetVariable",
+                                        "inputs": {
+                                            "name": "Done",
+                                            "value": true
+                                        }
+                                    }
+                                },
+                                "else": {
+                                    "actions": {}
+                                },
+                                "runAfter": {
+                                    "UpdateItem": [
+                                        "Succeeded",
+                                        "Failed",
+                                        "TimedOut"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "Condition_Saved": {
+                        "type": "If",
+                        "expression": {
+                            "equals": [
+                                "@variables('Done')",
+                                true
+                            ]
+                        },
+                        "actions": {
+                            "Response_Success": {
+                                "type": "Response",
+                                "kind": "Http",
+                                "inputs": {
+                                    "statusCode": 200,
+                                    "headers": {
+                                        "Content-Type": "application/json"
+                                    },
+                                    "body": {
+                                        "success": true
+                                    }
+                                }
+                            }
+                        },
+                        "else": {
+                            "actions": {
+                                "Response_Conflict": {
+                                    "type": "Response",
+                                    "kind": "Http",
+                                    "inputs": {
+                                        "statusCode": 409,
+                                        "headers": {
+                                            "Content-Type": "application/json"
+                                        },
+                                        "body": {
+                                            "error": "Could not save Panel Recommendations after multiple attempts — please retry."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "Do_Until_Saved": [
+                                "Succeeded"
+                            ]
+                        }
+                    }
+                },
+                "else": {
+                    "actions": {
+                        "Response_Forbidden": {
+                            "type": "Response",
+                            "kind": "Http",
+                            "inputs": {
+                                "statusCode": 403,
+                                "headers": {
+                                    "Content-Type": "application/json"
+                                },
+                                "body": {
+                                    "error": "You are not authorized to edit Panel Recommendations on this report."
+                                }
+                            }
+                        }
+                    }
+                },
+                "runAfter": {
+                    "FilterReviewerMatch": [
+                        "Succeeded"
+                    ],
+                    "FilterAdminMatch": [
+                        "Succeeded"
+                    ],
+                    "InitializeVariables": [
+                        "Succeeded"
+                    ]
+                }
+            }
+        },
+        "outputs": {}
+    },
+    "kind": "stateful"
+}
